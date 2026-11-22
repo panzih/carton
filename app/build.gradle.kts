@@ -30,19 +30,21 @@ val robolectricAndroidAllVersions = listOf(
     "15-robolectric-12650502-i7",
 )
 
-val robolectricDeps: Configuration by configurations.creating
-
-dependencies {
-    robolectricAndroidAllVersions.forEach {
-        robolectricDeps("org.robolectric:android-all-instrumented:$it")
-    }
+// **一个版本一个配置。**
+// 它们属于同一个模块坐标（org.robolectric:android-all-instrumented），
+// 放进同一个配置会被 Gradle 按版本冲突只解析出最高的那个 —— 另一个直接
+// 不下载，运行时就是 "Path is not a file"。
+val robolectricDeps = robolectricAndroidAllVersions.mapIndexed { i, v ->
+    val cfg = configurations.create("robolectricDeps$i")
+    dependencies.add(cfg.name, "org.robolectric:android-all-instrumented:$v")
+    cfg
 }
 
 val robolectricDepsDir = layout.buildDirectory.dir("robolectric-deps")
 
 val copyRobolectricDeps by tasks.registering(Copy::class) {
     description = "把 Robolectric 的 android-all 复制到固定目录，供 offline 模式读取"
-    from(robolectricDeps)
+    robolectricDeps.forEach { from(it) }
     into(robolectricDepsDir)
 }
 
