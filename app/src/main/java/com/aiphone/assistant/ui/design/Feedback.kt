@@ -5,13 +5,11 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
-import androidx.compose.foundation.layout.IntrinsicSize
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
@@ -89,40 +87,28 @@ fun Banner(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .height(IntrinsicSize.Min)
-            .background(tone.container(), shape),
+            .background(tone.container(), shape)
+            .padding(horizontal = Space.md, vertical = Space.sm),
+        verticalAlignment = Alignment.Top,
     ) {
-        Box(
-            modifier = Modifier
-                .width(4.dp)
-                .fillMaxHeight()
-                .background(tone.color(), shape),
-        )
-        Row(
-            modifier = Modifier
-                .weight(1f)
-                .padding(horizontal = Space.md, vertical = Space.md),
-            verticalAlignment = Alignment.Top,
-        ) {
-            if (icon != null) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = null,
-                    tint = tone.color(),
-                    modifier = Modifier.padding(top = 1.dp).size(Size.iconSm),
-                )
-                Spacer(Modifier.width(Space.sm))
-            }
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = text,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = tone.onContainer(),
-                )
-                if (action != null) {
-                    Spacer(Modifier.height(Space.xs))
-                    action()
-                }
+        if (icon != null) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = tone.color(),
+                modifier = Modifier.padding(top = 2.dp).size(Size.iconSm),
+            )
+            Spacer(Modifier.width(Space.sm))
+        }
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = text,
+                style = MaterialTheme.typography.bodySmall,
+                color = tone.onContainer(),
+            )
+            if (action != null) {
+                Spacer(Modifier.height(Space.xs))
+                action()
             }
         }
     }
@@ -291,13 +277,7 @@ fun SliderSetting(
             Text(
                 text = valueLabel,
                 style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onPrimaryContainer,
-                modifier = Modifier
-                    .background(
-                        MaterialTheme.colorScheme.primaryContainer,
-                        RoundedCornerShape(Radius.pill),
-                    )
-                    .padding(horizontal = Space.md, vertical = 4.dp),
+                color = MaterialTheme.colorScheme.primary,
             )
         }
 

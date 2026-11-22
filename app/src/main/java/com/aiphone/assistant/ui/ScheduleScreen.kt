@@ -161,7 +161,7 @@ fun ScheduleScreen(
             }
 
             // ---- 新建 ----
-            item { SectionTitle(text = stringResource(R.string.schedule_new), icon = Icons.Filled.Add) }
+            item { SectionTitle(text = stringResource(R.string.schedule_new)) }
             item {
                 GroupCard(modifier = Modifier.padding(horizontal = Space.lg)) {
                     Column(modifier = Modifier.padding(Space.lg)) {
@@ -199,6 +199,7 @@ fun ScheduleScreen(
                     SwitchRow(
                         title = stringResource(R.string.schedule_use_vd),
                         subtitle = stringResource(R.string.schedule_use_vd_desc),
+                        badge = "Beta",
                         checked = onVirtualDisplay,
                         onCheckedChange = { onVirtualDisplay = it },
                     )
@@ -224,7 +225,6 @@ fun ScheduleScreen(
             item {
                 SectionTitle(
                     text = stringResource(R.string.schedule_existing),
-                    icon = Icons.Filled.Schedule,
                     trailing = {
                         if (state.schedules.isNotEmpty()) {
                             StatusPill(

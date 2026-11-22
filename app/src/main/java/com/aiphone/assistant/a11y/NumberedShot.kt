@@ -84,7 +84,7 @@ object NumberedShot {
         // 半径随图缩放：小图（降质兜底路径）也要画得下
         val r = (bmp.width * 0.014f).coerceIn(10f, 30f)
         val circle = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.rgb(0x18, 0x6A, 0x56) // 主题松墨绿：和界面的视觉语言一致
+            color = Color.rgb(0x1F, 0x4F, 0xE0) // 主题电光蓝：和界面的视觉语言一致
             style = Paint.Style.FILL
             alpha = 210
         }

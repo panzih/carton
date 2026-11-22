@@ -62,6 +62,7 @@ import com.aiphone.assistant.record.MacroStore
 import com.aiphone.assistant.record.Recorder
 import com.aiphone.assistant.record.RecordingShortcut
 import com.aiphone.assistant.schedule.PendingRunTask
+import com.aiphone.assistant.suggest.SuggestionProvider
 import com.aiphone.assistant.schedule.ScheduleReceiver
 import com.aiphone.assistant.schedule.Schedule
 import com.aiphone.assistant.schedule.ScheduleStore
@@ -350,6 +351,14 @@ private fun AppRoot(
     var logStats by remember { mutableStateOf("") }
     var memoryStats by remember { mutableStateOf("") }
     var autoCapStats by remember { mutableStateOf("") }
+
+    /**
+     * 任务结束后模型提的「接下来你可能想做什么」。
+     *
+     * 只在当前这段对话里有意义：发新任务就清空（那时用户已经自己决定了
+     * 下一步，旧建议全部作废）。
+     */
+    var suggestions by remember { mutableStateOf(emptyList<String>()) }
 
     /** Shizuku 当前状态（设置页「副屏」状态行用） */
     var shizukuState by remember { mutableStateOf("") }
@@ -682,6 +691,8 @@ private fun AppRoot(
         // 还没并进历史的记忆也一并丢掉：它们属于上一段上下文
         host.pendingMemoryTurns.clear()
         host.memoryHistoryFlushed = false
+        // 建议也是上一段对话的产物，跟着一起清
+        suggestions = emptyList()
         modelFingerprints = emptyList()
         contextMemory = ""
         // 新开一段就用**当前**技能目录（学会技能后清空一次即可让提示词跟上）
@@ -1063,6 +1074,37 @@ private fun AppRoot(
                     // 而且用户可能几个月都不手动清一次上下文。
                     // 总结完成后同一条就地更新，不会再冒一条新消息。
                     var memoryLogId: String? = null
+
+                    // 任务结束后问模型「接下来你可能想做什么」。
+                    //
+                    // 它要读的轮次在这里就定下来：`memorizeAfterTask` 之后
+                    // conversation 里会多出记忆那条，「刚做完什么」反而被稀释了。
+                    val suggestTurns = conversation.snapshot().drop(taskTurnStart.coerceAtLeast(0))
+
+                    fun suggestNext() {
+                        if (suggestTurns.isEmpty()) {
+                            suggestions = emptyList()
+                            return
+                        }
+                        scope.launch {
+                            // LlmClient.chat 是同步阻塞的，必须走 IO。
+                            // 失败一律当"没有建议"，不弹错、不写日志 ——
+                            // 这只是锦上添花，不该因为一次网络抖动打扰用户。
+                            val got = withContext(Dispatchers.IO) {
+                                runCatching {
+                                    SuggestionProvider(llm).suggest(
+                                        turns = suggestTurns,
+                                        recentMemory = MemoryStore.readForPrompt(
+                                            context.applicationContext
+                                        ),
+                                    )
+                                }.getOrDefault(emptyList())
+                            }
+                            // 任务已经重新开跑就别再贴旧建议了
+                            if (!isRunning) suggestions = got
+                        }
+                    }
+
                     memorizeAfterTask(
                         scope = scope,
                         context = context.applicationContext,
@@ -1123,7 +1165,13 @@ private fun AppRoot(
                                 // 对话里也留一条，下次归纳知道"这条已经记过了"
                                 conversation.add(Turn(Turn.Role.AI, "（记忆）${outcome.title}"))
                             }
-                            refreshStats()
+
+                            // 记忆处理完再问"接下来可能想做什么"。
+                            //
+                            // 放在记忆之后而不是之前：建议可以利用刚写进去的
+                            // 那条记忆，比只看过程更贴用户。它同样是一次独立调用，
+                            // 失败就是空列表，不影响任何别的路径。
+                            suggestNext()
                         },
                     )
                 }
@@ -1407,6 +1455,8 @@ private fun AppRoot(
 
         // 记住起点，任务结束时只归纳从这里往后的轮次
         taskTurnStart = conversation.size
+        // 用户已经自己决定下一步了，上一轮的建议作废
+        suggestions = emptyList()
         conversation.add(Turn(Turn.Role.USER, task))
 
         // 进程死亡标记：正常结束会在 finally 里删掉；没删掉就说明
@@ -1796,6 +1846,7 @@ private fun AppRoot(
                 input = input,
                 isRunning = isRunning,
                 logs = logs,
+                suggestions = suggestions,
                 settings = settings,
                 authorized = authorized,
                 overlayGranted = overlayGranted,

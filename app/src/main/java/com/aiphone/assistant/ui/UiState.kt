@@ -86,6 +86,15 @@ data class MainUiState(
     /** 中间那块显示的日志（AI 的思考 / 动作 / 结果）。空的时候显示 logo */
     val logs: List<LogEntry> = emptyList(),
 
+    /**
+     * 「接下来你可能想做什么」—— 任务结束后模型提的至多三条。
+     *
+     * 单独一个字段而不是塞进 [logs]：它要**钉在列表最底部**，
+     * 而 logs 是倒序渲染的；混在一起还得给每条打标区分，不如分开清楚。
+     * 点一条就填进输入框，不直接发送 —— 用户可能想改两个字再发。
+     */
+    val suggestions: List<String> = emptyList(),
+
     /** 全部设置 */
     val settings: AppSettings = AppSettings(),
 

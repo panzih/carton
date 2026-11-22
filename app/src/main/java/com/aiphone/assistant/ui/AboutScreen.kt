@@ -95,7 +95,7 @@ fun AboutScreen(
                 )
             }
 
-            item { SectionTitle(text = "隐私说明", icon = Icons.Filled.Lock) }
+            item { SectionTitle(text = "隐私说明") }
             item {
                 HintText(
                     text = "纸盒没有广告或分析 SDK。下面是你需要知道的联网与本地数据行为：",
@@ -116,7 +116,7 @@ fun AboutScreen(
                 }
             }
 
-            item { SectionTitle(text = "作者与仓库", icon = Icons.Filled.Star) }
+            item { SectionTitle(text = "作者与仓库") }
             item {
                 GroupCard(modifier = Modifier.padding(horizontal = Space.lg)) {
                     InfoRow(stringResource(R.string.settings_about_author), AppInfo.AUTHOR)

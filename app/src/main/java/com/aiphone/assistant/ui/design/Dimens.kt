@@ -40,26 +40,27 @@ object Space {
 }
 
 /**
- * 圆角家族：8 / 12 / 18 / 24 / 30。
+ * 圆角家族：8 / 10 / 12 / 16 / 22。
  *
  * 卡片用 [Radius.lg]，按钮和输入框用 [Radius.md]，
- * 只有"气泡"和"胶囊"才用 [Radius.pill] —— 圆角也是语义。
+ * 只有状态胶囊和日志气泡才用 [Radius.pill] —— 圆角也是语义。
+ * 大圆角的"软"感收掉了：这是操作手机的工具，不是聊天玩具。
  */
 object Radius {
     /** 8dp —— 聊天气泡的"尖角" */
     val xs = 8.dp
 
-    /** 12dp —— 小标签、段内选中块、行内点击高亮 */
-    val sm = 12.dp
+    /** 10dp —— 小标签、段内选中块、行内点击高亮 */
+    val sm = 10.dp
 
-    /** 18dp —— 按钮、输入框 */
-    val md = 18.dp
+    /** 12dp —— 按钮、输入框 */
+    val md = 12.dp
 
-    /** 24dp —— 卡片 */
-    val lg = 24.dp
+    /** 16dp —— 卡片 */
+    val lg = 16.dp
 
-    /** 30dp —— 对话框、底部输入容器 */
-    val xl = 30.dp
+    /** 22dp —— 对话框、底部输入容器 */
+    val xl = 22.dp
 
     /** 胶囊 */
     val pill = 100.dp
@@ -82,8 +83,8 @@ val AppShapes = Shapes(
  */
 object Size {
     val touchTarget = 48.dp
-    val rowMinHeight = 64.dp
-    val buttonHeight = 50.dp
+    val rowMinHeight = 56.dp
+    val buttonHeight = 48.dp
     val iconSm = 16.dp
     val iconMd = 20.dp
     val iconLg = 24.dp

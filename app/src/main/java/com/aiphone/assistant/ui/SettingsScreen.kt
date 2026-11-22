@@ -162,13 +162,12 @@ fun SettingsScreen(
             item {
                 SectionTitle(
                     text = stringResource(R.string.settings_section_model),
-                    icon = Icons.Filled.Tune,
                 )
             }
             item { ModelSection(s, onSettingsChange) }
 
             // ================= 行为 =================
-            item { SectionTitle(text = "行为", icon = Icons.Filled.Build) }
+            item { SectionTitle(text = "行为") }
             item {
                 GroupCard(modifier = Modifier.padding(horizontal = Space.lg)) {
                     StepsSliderRow(
@@ -188,6 +187,7 @@ fun SettingsScreen(
                     GroupDivider()
                     SwitchRow(
                         title = stringResource(R.string.settings_voice_input),
+                        badge = "Beta",
                         subtitle = stringResource(R.string.settings_voice_input_desc),
                         checked = s.voiceInput,
                         onCheckedChange = { onSettingsChange(s.copy(voiceInput = it)) },
@@ -203,7 +203,7 @@ fun SettingsScreen(
             }
 
             // ================= 记忆与数据 =================
-            item { SectionTitle(text = "记忆与数据", icon = Icons.Filled.Memory) }
+            item { SectionTitle(text = "记忆与数据") }
             item {
                 GroupCard(modifier = Modifier.padding(horizontal = Space.lg)) {
                     SwitchRow(
@@ -244,6 +244,7 @@ fun SettingsScreen(
                     GroupDivider()
                     SwitchRow(
                         title = stringResource(R.string.settings_overlay_blur),
+                        badge = "Beta",
                         subtitle = stringResource(R.string.settings_overlay_blur_desc),
                         checked = s.overlayBlur,
                         onCheckedChange = { onSettingsChange(s.copy(overlayBlur = it)) },
@@ -251,6 +252,7 @@ fun SettingsScreen(
                     GroupDivider()
                     SwitchRow(
                         title = stringResource(R.string.settings_local_dismiss),
+                        badge = "Beta",
                         subtitle = stringResource(R.string.settings_local_dismiss_desc),
                         checked = s.localDialogDismiss,
                         onCheckedChange = { onSettingsChange(s.copy(localDialogDismiss = it)) },
@@ -259,7 +261,7 @@ fun SettingsScreen(
             }
 
             // ================= 开发者 =================
-            item { SectionTitle(text = "开发者", icon = Icons.Filled.Description) }
+            item { SectionTitle(text = "开发者") }
             item {
                 Banner(
                     text = stringResource(R.string.settings_developer_warning),
@@ -279,12 +281,14 @@ fun SettingsScreen(
                     ActionRow(
                         title = "运行副屏探针",
                         subtitle = "检查副屏能否读到控件树，结果写进日志",
+                        badge = "Beta",
                         showChevron = true,
                         onClick = onProbeVirtualDisplay,
                     )
                     GroupDivider()
                     ActionRow(
                         title = stringResource(R.string.settings_vd_mirror),
+                        badge = "Beta",
                         subtitle = stringResource(R.string.settings_vd_mirror_sub),
                         showChevron = true,
                         onClick = onLookAtVd,
@@ -292,6 +296,7 @@ fun SettingsScreen(
                     GroupDivider()
                     SwitchRow(
                         title = stringResource(R.string.settings_allow_browser_eval),
+                        badge = "Beta",
                         subtitle = stringResource(R.string.settings_allow_browser_eval_desc),
                         checked = s.allowBrowserEval,
                         onCheckedChange = { onSettingsChange(s.copy(allowBrowserEval = it)) },
@@ -301,6 +306,7 @@ fun SettingsScreen(
                     // 现在补上 —— 打开后抽屉里出现入口，输入框说「操作记录」也进得去
                     SwitchRow(
                         title = "操作记录（实验）",
+                        badge = "Beta",
                         subtitle = "录制操作并让 AI 学成可复用的技能。功能还在打磨，默认关闭。",
                         checked = s.recordingEntry,
                         onCheckedChange = { onSettingsChange(s.copy(recordingEntry = it)) },
@@ -309,7 +315,7 @@ fun SettingsScreen(
             }
 
             // ================= 日志 =================
-            item { SectionTitle(text = stringResource(R.string.settings_export_logs), icon = Icons.Filled.Description) }
+            item { SectionTitle(text = stringResource(R.string.settings_export_logs)) }
             item { SectionNote(stringResource(R.string.settings_export_logs_desc)) }
             item {
                 LogSection(

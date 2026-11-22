@@ -185,6 +185,20 @@ state = {"n": 0, "total": 0, "review_n": 0, "last_messages": None, "last_texts":
 if "REVIEW_SCRIPT" not in globals():
     REVIEW_SCRIPT = ['{"ok":true}']
 
+# 记忆归纳的假回复。第一行标题、其余正文，和真模型的输出格式一致。
+# 它只验证链路（解析 → 落盘 → 并进模型历史），不验证归纳质量 ——
+# 质量取决于真模型，假模型回什么都一样。
+DISTILL_REPLY = """常用系统设置查看存储
+
+- 常打开「设置」查看存储空间
+- 先从桌面图标进设置，再点「存储」
+"""
+
+# 「下一步建议」的假回复：三行、无编号，和真模型的输出格式一致。
+SUGGEST_REPLY = """再看看内部存储还剩多少
+把屏幕亮度调低一点
+退出设置回到桌面"""
+
 
 class Handler(BaseHTTPRequestHandler):
     PAGE_HTML = """<!doctype html>
@@ -283,10 +297,16 @@ class Handler(BaseHTTPRequestHandler):
             if isinstance(m, dict) and m.get("role") == "system" and isinstance(m.get("content"), str)
         )
         is_review = "点击前复核员" in system_text
+        # 记忆归纳：任务结束后的一次独立调用（system 是「记忆整理助手」）。
+        # 它不参与主对话前缀比较，也不该消耗主剧本索引 —— 否则每做一次
+        # 归纳，下一次端到端测试的主剧本就会错位一格。
+        is_distill = "记忆整理助手" in system_text
+        # 「下一步建议」也是任务结束后的独立调用（system 是「下一步建议助手」）
+        is_suggest = "下一步建议助手" in system_text
 
         prefix = 0
         prev_len = len(state["last_texts"]) if state["last_texts"] else 0
-        if not is_review:
+        if not is_review and not is_distill and not is_suggest:
             if state["last_texts"] is not None:
                 for a, b in zip(state["last_texts"], texts):
                     if a == b:
@@ -296,10 +316,30 @@ class Handler(BaseHTTPRequestHandler):
             # 上一次的整条序列如果原样成为这次的前缀，就是 100% 命中
             state["last_texts"] = texts
 
-        print(f"\n=== 第 {serial + 1} 次请求{'（点击前复核）' if is_review else ''} ===")
+        tag = ("（点击前复核）" if is_review else "（记忆归纳）" if is_distill
+               else "（下一步建议）" if is_suggest else "")
+        print(f"\n=== 第 {serial + 1} 次请求{tag} ===")
         print(f"  消息数    : {len(messages)}  上次 {prev_len} 条")
         if is_review:
             print("  复核请求  : 独立上下文（不参与主对话前缀）")
+        elif is_distill:
+            print("  归纳请求  : 独立上下文（不参与主对话前缀）")
+            # 归纳器的输入正是要验证的东西：判断"过程有没有进 turns"。
+            # 只有「用户：任务」「AI：结论」两行 = 假设中那个 bug 还在。
+            for m in messages:
+                if m.get("role") == "user":
+                    body = m.get("content")
+                    body = body if isinstance(body, str) else ""
+                    print(f"  归纳输入  : {len(body)} 字符")
+                    for line in body.splitlines()[:12]:
+                        print(f"    | {line[:100]}")
+        elif is_suggest:
+            print("  建议请求  : 独立上下文（不参与主对话前缀）")
+            for m in messages:
+                if m.get("role") == "user":
+                    body = m.get("content")
+                    body = body if isinstance(body, str) else ""
+                    print(f"  建议输入  : {len(body)} 字符")
         else:
             print(f"  前缀复用  : {prefix} / {prev_len} 条" +
                   ("   ✅ 前缀完整保留" if prev_len and prefix == prev_len else
@@ -330,6 +370,13 @@ class Handler(BaseHTTPRequestHandler):
             state["review_n"] += 1
             content = REVIEW_SCRIPT[ridx]
             print(f"  复核返回  : {content[:100]}")
+        elif is_distill:
+            # 归纳也单独一条，不占主剧本索引（同复核的道理）
+            content = DISTILL_REPLY
+            print(f"  归纳返回  : {content.splitlines()[0]}")
+        elif is_suggest:
+            content = SUGGEST_REPLY
+            print(f"  建议返回  : {SUGGEST_REPLY.replace(chr(10), ' / ')}")
         else:
             idx = min(state["n"], len(SCRIPTED) - 1)
             state["n"] += 1

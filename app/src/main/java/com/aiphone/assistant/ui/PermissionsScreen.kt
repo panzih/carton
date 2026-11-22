@@ -126,7 +126,6 @@ fun PermissionsScreen(
             item {
                 SectionTitle(
                     text = stringResource(R.string.permissions_section_channel),
-                    icon = Icons.Filled.PhoneAndroid,
                 )
             }
             item {
@@ -179,7 +178,6 @@ fun PermissionsScreen(
             item {
                 SectionTitle(
                     text = stringResource(R.string.permissions_section_system),
-                    icon = Icons.Filled.Layers,
                 )
             }
             item {
@@ -379,6 +377,7 @@ private fun VirtualDisplayStatusRow(
     SettingRow(
         title = stringResource(R.string.vd_title),
         subtitle = stringResource(R.string.settings_vd_entry_desc),
+        badge = "Beta",
         onClick = onClick,
         leading = {
             IconBadge(

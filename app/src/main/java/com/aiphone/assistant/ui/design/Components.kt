@@ -130,26 +130,28 @@ fun AppScaffold(
                                 )
                             }
                         }
+                        Spacer(Modifier.width(Space.md))
                     }
-                    Spacer(Modifier.weight(1f))
+                    if (title.isNotBlank()) {
+                        Text(
+                            text = title,
+                            style = MaterialTheme.typography.headlineSmall,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f),
+                        )
+                    } else {
+                        Spacer(Modifier.weight(1f))
+                    }
                     Row(verticalAlignment = Alignment.CenterVertically, content = actions)
-                }
-                if (title.isNotBlank()) {
-                    Text(
-                        text = title,
-                        style = MaterialTheme.typography.headlineMedium,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.padding(top = Space.xs),
-                    )
                 }
                 if (!subtitle.isNullOrBlank()) {
                     Text(
                         text = subtitle,
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(top = Space.xs),
+                        modifier = Modifier.padding(start = if (onBack != null) 52.dp else 0.dp),
                     )
                 }
                 Spacer(Modifier.height(Space.md))
@@ -167,38 +169,36 @@ fun AppScaffold(
 /**
  * 分组小标题。
  *
- * 可选的图标 + 主色小字，上方留 28dp、下方留 10dp：
- * 标题离上一组远、离自己这组近，分组关系才看得出来。
+ * 灰色小字 + 一条细线：标题退到背景里，让内容和分组关系自己说话 ——
+ * 每个标题配一个图标会把页面噪声拉满，所以这里**不收图标**。
  */
 @Composable
 fun SectionTitle(
     text: String,
     modifier: Modifier = Modifier,
-    icon: ImageVector? = null,
     trailing: (@Composable () -> Unit)? = null,
 ) {
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .padding(start = Space.lg, end = Space.lg, top = Space.xxl, bottom = Space.sm),
+            .padding(start = Space.lg, end = Space.lg, top = Space.xl, bottom = Space.sm),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        if (icon != null) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(Size.iconSm),
-            )
-            Spacer(Modifier.width(Space.sm))
-        }
         Text(
             text = text,
-            style = MaterialTheme.typography.titleSmall,
-            color = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.weight(1f),
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1,
         )
-        if (trailing != null) trailing()
+        Spacer(Modifier.width(Space.sm))
+        HorizontalDivider(
+            modifier = Modifier.weight(1f),
+            color = MaterialTheme.colorScheme.outlineVariant,
+        )
+        if (trailing != null) {
+            Spacer(Modifier.width(Space.sm))
+            trailing()
+        }
     }
 }
 
@@ -235,14 +235,14 @@ fun GroupCard(
             .clip(shape)
             .background(MaterialTheme.colorScheme.surface)
             .border(1.dp, MaterialTheme.colorScheme.outlineVariant, shape)
-            .padding(vertical = 6.dp),
+            .padding(vertical = 4.dp),
         content = content,
     )
 }
 
 /** 卡片内部的分隔线，左边缩进，和文字起点对齐 */
 @Composable
-fun GroupDivider(modifier: Modifier = Modifier, indent: Int = 20) {
+fun GroupDivider(modifier: Modifier = Modifier, indent: Int = 16) {
     HorizontalDivider(
         modifier = modifier.padding(start = indent.dp, end = Space.lg),
         color = MaterialTheme.colorScheme.outlineVariant,
@@ -304,6 +304,7 @@ fun Modifier.interactiveSurface(
  * @param subtitle 次要说明，可为空。有它的时候行会变高。
  * @param onClick  null 表示这一行不可点（只显示），此时不加悬停/按下反馈。
  * @param showChevron 右侧补一个箭头，表示"点了会去别处"。
+ * @param badge 标题旁的小标记（如「Beta」）。null 表示不标。
  */
 @Composable
 fun SettingRow(
@@ -316,6 +317,7 @@ fun SettingRow(
     trailing: (@Composable () -> Unit)? = null,
     trailingGap: androidx.compose.ui.unit.Dp = Space.md,
     showChevron: Boolean = false,
+    badge: String? = null,
 ) {
     val titleColor = if (enabled) MaterialTheme.colorScheme.onSurface
     else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
@@ -331,7 +333,7 @@ fun SettingRow(
                 shape = RoundedCornerShape(Radius.sm),
                 onClick = onClick,
             )
-            .padding(horizontal = Space.lg, vertical = Space.md),
+            .padding(horizontal = Space.lg, vertical = Space.sm),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         if (leading != null) {
@@ -339,11 +341,17 @@ fun SettingRow(
             Spacer(Modifier.width(Space.md))
         }
         Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.bodyLarge,
-                color = titleColor,
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = titleColor,
+                )
+                if (badge != null) {
+                    Spacer(Modifier.width(Space.xs))
+                    BetaBadge(text = badge)
+                }
+            }
             if (!subtitle.isNullOrBlank()) {
                 Spacer(Modifier.height(Space.xxs))
                 Text(
@@ -369,6 +377,27 @@ fun SettingRow(
     }
 }
 
+/**
+ * 「Beta」小标记 —— 标在**还没在真机上验收过**的功能旁边。
+ *
+ * 用它而不是把它塞进副标题：副标题会跟着功能名一起被读到，
+ * 用户分不清那是限制说明还是状态。做成一个小胶囊，一眼就知道"这功能还没坐实"。
+ */
+@Composable
+fun BetaBadge(text: String = "Beta") {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.labelSmall,
+        color = AppTheme.accents.onWarningContainer,
+        modifier = Modifier
+            .background(
+                AppTheme.accents.warningContainer,
+                RoundedCornerShape(Radius.pill),
+            )
+            .padding(horizontal = 6.dp, vertical = 1.dp),
+    )
+}
+
 /** 开关行 —— 整行可点（点在文字上也算），热区比只点开关大得多 */
 @Composable
 fun SwitchRow(
@@ -379,6 +408,7 @@ fun SwitchRow(
     subtitle: String? = null,
     enabled: Boolean = true,
     leading: (@Composable () -> Unit)? = null,
+    badge: String? = null,
 ) {
     SettingRow(
         title = title,
@@ -386,6 +416,7 @@ fun SwitchRow(
         enabled = enabled,
         modifier = modifier,
         leading = leading,
+        badge = badge,
         onClick = { onCheckedChange(!checked) },
         trailing = {
             Switch(
@@ -407,6 +438,7 @@ fun ActionRow(
     destructive: Boolean = false,
     leading: (@Composable () -> Unit)? = null,
     showChevron: Boolean = false,
+    badge: String? = null,
     onClick: () -> Unit,
 ) {
     val color = when {
@@ -423,7 +455,7 @@ fun ActionRow(
                 shape = RoundedCornerShape(Radius.sm),
                 onClick = onClick,
             )
-            .padding(horizontal = Space.lg, vertical = Space.md),
+            .padding(horizontal = Space.lg, vertical = Space.sm),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         if (leading != null) {
@@ -431,7 +463,13 @@ fun ActionRow(
             Spacer(Modifier.width(Space.md))
         }
         Column(modifier = Modifier.weight(1f)) {
-            Text(text = title, style = MaterialTheme.typography.bodyLarge, color = color)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(text = title, style = MaterialTheme.typography.bodyLarge, color = color)
+                if (badge != null) {
+                    Spacer(Modifier.width(Space.xs))
+                    BetaBadge(text = badge)
+                }
+            }
             if (!subtitle.isNullOrBlank()) {
                 Spacer(Modifier.height(Space.xxs))
                 Text(
@@ -622,8 +660,8 @@ fun AppButton(
     loading: Boolean = false,
     icon: ImageVector? = null,
 ) {
-    val shape = RoundedCornerShape(Radius.pill)
-    val contentPadding = PaddingValues(horizontal = Space.xxl, vertical = Space.md)
+    val shape = RoundedCornerShape(Radius.md)
+    val contentPadding = PaddingValues(horizontal = Space.xl, vertical = Space.md)
     val effectiveEnabled = enabled && !loading
 
     val body: @Composable RowScope.() -> Unit = {
@@ -649,7 +687,7 @@ fun AppButton(
             contentPadding = contentPadding,
             modifier = modifier.heightIn(min = Size.buttonHeight),
             elevation = ButtonDefaults.buttonElevation(
-                defaultElevation = 1.dp,
+                defaultElevation = 0.dp,
                 pressedElevation = 0.dp,
                 disabledElevation = 0.dp,
             ),

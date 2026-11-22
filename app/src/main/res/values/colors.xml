@@ -6,7 +6,7 @@
       窗口先铺这层颜色。不设的话那几十毫秒是系统默认的白，
       深色模式下就是一下刺眼的白闪。
     -->
-    <color name="app_canvas">#F5F3EE</color>
+    <color name="app_canvas">#F7F5F0</color>
 
     <!--
       自适应图标的背景色：浅牛皮纸色。

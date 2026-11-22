@@ -22,7 +22,7 @@ import com.aiphone.assistant.ui.design.Paper
  * 和 0.10.x 相比有两处变化，都是"统一视觉"的前提：
  *
  * 1. **不再跟随系统动态取色。** 界面主色如果跟着壁纸走，同一个软件在两台
- *    手机上就不是同一个软件，语义色还可能与壁纸撞色。品牌色固定成松墨绿。
+ *    手机上就不是同一个软件，语义色还可能与壁纸撞色。品牌色固定成电光钴蓝。
  * 2. **容器色显式指定。** Material 自带的 surfaceContainer 是带紫调的灰，
  *    盖在暖纸画布上会发脏；这里把整条容器阶梯都对齐到同一套暖灰。
  *
@@ -77,7 +77,7 @@ private val LightScheme: ColorScheme = lightColorScheme(
 
 private val DarkScheme: ColorScheme = darkColorScheme(
     primary = Ink.accent,
-    onPrimary = Color(0xFF06251C),
+    onPrimary = Color(0xFF08101E),
     primaryContainer = Ink.accentSoft,
     onPrimaryContainer = Ink.accentDeep,
     inversePrimary = Ink.accent,

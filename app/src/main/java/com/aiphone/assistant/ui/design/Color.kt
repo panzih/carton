@@ -18,7 +18,7 @@ import androidx.compose.ui.graphics.Color
  *
  *   画布  暖白（像纸），卡片比画布再亮一档
  *   文字  墨色三级（正文 / 次要 / 提示），靠亮度拉开层次
- *   主色  松墨绿 —— 一个"可以开始跑"的信号色，同时避开满大街的科技蓝
+ *   主色  电光钴蓝 —— 一个"可以开始跑"的信号色；纸白底上够沉，暗色下提亮
  *
  * 亮暗两套不是简单反相：暗色用**深灰而非纯黑**（纯黑配白字在 OLED 上有光晕，
  * 且卡片和画布会糊在一起），前景色降饱和、提亮度，保证对比度不掉。
@@ -32,9 +32,9 @@ internal object Paper {
     val ink = Color(0xFF1A1814)
     val inkSecondary = Color(0xFF575349)
     val inkTertiary = Color(0xFF8A8475)
-    val accent = Color(0xFF0E5C46)
-    val accentSoft = Color(0xFFD6EAE0)
-    val accentDeep = Color(0xFF073328)
+    val accent = Color(0xFF1F4FE0)
+    val accentSoft = Color(0xFFE4EAFD)
+    val accentDeep = Color(0xFF0E2A78)
     val danger = Color(0xFFAC3529)
     val dangerSoft = Color(0xFFF7E3DF)
     val warning = Color(0xFF8F5B0D)
@@ -60,9 +60,9 @@ internal object Ink {
     val ink = Color(0xFFF2EFE7)
     val inkSecondary = Color(0xFFA9A395)
     val inkTertiary = Color(0xFF7D7869)
-    val accent = Color(0xFF6BD3B0)
-    val accentSoft = Color(0xFF15362C)
-    val accentDeep = Color(0xFFB4E4D5)
+    val accent = Color(0xFF8AB0FF)
+    val accentSoft = Color(0xFF17264A)
+    val accentDeep = Color(0xFFC9DAFF)
     val danger = Color(0xFFE88A81)
     val dangerSoft = Color(0xFF3A1F1A)
     val warning = Color(0xFFD9AC55)
