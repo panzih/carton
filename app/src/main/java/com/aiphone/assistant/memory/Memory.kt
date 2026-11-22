@@ -530,8 +530,13 @@ object MemoryWriter {
      * 用户和排查的人都无从下手 —— 这次"记忆写入失效"就是这么被藏住的。
      */
     sealed class Outcome {
-        /** 成功写入，[title] 是那条记忆的标题 */
-        data class Written(val title: String) : Outcome()
+        /**
+         * 成功写入，[title] 是那条记忆的标题。
+         *
+         * [body] 是正文：主循环要把这条记忆当作一条普通消息并进模型历史，
+         * 只有标题的话模型看到的是一句没有内容的摘要。
+         */
+        data class Written(val title: String, val body: String = "") : Outcome()
 
         /** 没写，[reason] 是可以直接给用户看的一句话原因 */
         data class NotWritten(val reason: String) : Outcome()
@@ -560,7 +565,8 @@ object MemoryWriter {
                 val existing = MemoryStore.readForPrompt(context)
                 when (val r = LlmDistiller(llm).distill(turns, existing)) {
                     is DistillResult.Entry -> when (val a = MemoryStore.append(context, r.entry)) {
-                        MemoryStore.AppendResult.Written -> Outcome.Written(r.entry.title)
+                        MemoryStore.AppendResult.Written ->
+                            Outcome.Written(r.entry.title, r.entry.body)
                         MemoryStore.AppendResult.Duplicate ->
                             Outcome.NotWritten("和已有记忆重复，已跳过")
                         is MemoryStore.AppendResult.Failed ->

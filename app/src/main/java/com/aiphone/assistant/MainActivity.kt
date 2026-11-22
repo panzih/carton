@@ -679,6 +679,9 @@ private fun AppRoot(
         logs.clear()
         // 模型那一侧也要归零，否则"新开一段上下文"只是界面上新开了
         modelHistory = emptyList()
+        // 还没并进历史的记忆也一并丢掉：它们属于上一段上下文
+        host.pendingMemoryTurns.clear()
+        host.memoryHistoryFlushed = false
         modelFingerprints = emptyList()
         contextMemory = ""
         // 新开一段就用**当前**技能目录（学会技能后清空一次即可让提示词跟上）
@@ -1086,6 +1089,40 @@ private fun AppRoot(
                                 }
                                 updateLog(id, text, LogKind.THOUGHT, "记忆")
                             }
+                            // 写成功的记忆**并进模型历史**，就像一条普通消息。
+                            //
+                            // 为什么不能只写文件：记忆文件只在"新开上下文"时
+                            // 注入系统提示词，那之后这段对话里的模型就再也看不到
+                            // 新的记忆了 —— 要等用户清空上下文才生效。而用户
+                            // 刚被归纳出来的东西，往往正是下一句话要用的。
+                            //
+                            // 为什么追加在尾部是安全的：缓存按前缀逐字节匹配，
+                            // 在末尾加一条不会改动任何已有字节，前面那段的缓存
+                            // 照常命中。**绝不能在中间插入或修改。**
+                            //
+                            // 为什么用 assistant 而不是 user：这不是用户说的话，
+                            // 标成 user 会让模型以为是用户新下的指令。
+                            if (outcome is MemoryWriter.Outcome.Written) {
+                                val memoryTurn = ChatTurn(
+                                    ChatTurn.ASSISTANT,
+                                    "（记忆）${outcome.title}\n\n${outcome.body}".trim(),
+                                )
+                                // 先塞进共享槽，再由「历史已经写回没有」决定怎么接。
+                                //
+                                // **不能直接 `modelHistory += memoryTurn`**：
+                                // `onFinished` 是在 `agent.run()` 内部被调用的，
+                                // 而 run() 返回后还有一句 `modelHistory = finalHistory`
+                                // —— 直接追加会先被那一下整个覆盖掉。
+                                host.pendingMemoryTurns += memoryTurn
+                                // 历史已经写回过（任务早已结束，归纳只是慢）：
+                                // 这时候没人会再来接这批，当场追加即可。
+                                if (host.memoryHistoryFlushed) {
+                                    modelHistory = modelHistory + memoryTurn
+                                    host.pendingMemoryTurns.clear()
+                                }
+                                // 对话里也留一条，下次归纳知道"这条已经记过了"
+                                conversation.add(Turn(Turn.Role.AI, "（记忆）${outcome.title}"))
+                            }
                             refreshStats()
                         },
                     )
@@ -1097,6 +1134,14 @@ private fun AppRoot(
 
         // 复评要用的那趟引用：run 之前就记下，任务失败也能复盘
         lastAgent = agent
+
+        // 这一趟新归纳出来的记忆。归纳是异步的（`onFinished` 里起，走 IO），
+        // 完成时刻不确定：可能早于 `agent.run()` 返回，也可能晚几秒。
+        // 用共享状态而不是局部变量，两个方向都能接住：
+        //   - 早于返回：下面赋值时一并接在末尾；
+        //   - 晚于返回：`onDone` 里发现历史已经写回，就直接追加。
+        host.pendingMemoryTurns.clear()
+        host.memoryHistoryFlushed = false
 
         val finalHistory = try {
             agent.run(task)
@@ -1111,7 +1156,16 @@ private fun AppRoot(
         }
         // 写回共享状态：**不能只在这里存一次** —— 上面那个 600ms 防抖的
         // 自动保存读的也是这个变量，不同步的话它会把旧值（空的）盖回来
-        modelHistory = finalHistory
+        //
+        // 记忆接在末尾：缓存按前缀逐字节匹配，尾部追加不会改动任何已有字节，
+        // 前面那段的缓存照常命中。下一次任务的第一条请求就带着它。
+        //
+        // 先取走待并的再清空：归纳若在这一刻之后才完成，会走另一条路
+        // （见 onDone 里的 memoryHistoryFlushed 判断）。
+        val memoryTurns = host.pendingMemoryTurns.toList()
+        host.pendingMemoryTurns.clear()
+        modelHistory = finalHistory + memoryTurns
+        host.memoryHistoryFlushed = true
         modelFingerprints = llm.fingerprintChain()
         // 上下文已保存是内部状态，不再作为一条日志显示给用户
     }

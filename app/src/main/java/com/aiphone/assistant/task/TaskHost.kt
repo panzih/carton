@@ -86,6 +86,31 @@ class TaskHost(context: Context) {
     val conversation = Conversation()
 
     val modelHistoryState = mutableStateOf<List<ChatTurn>>(emptyList())
+
+    /**
+     * 这一趟任务归纳出来的记忆，等着并进 [modelHistoryState]。
+     *
+     * 归纳是异步的：`onFinished` 里起协程、走 IO 调模型，而 `agent.run()`
+     * 返回后要把历史整体赋值一次。两个时刻谁先谁后不确定，所以：
+     *
+     * - **先完成**：赋值时把这里的条目一并接在末尾；
+     * - **后完成**：发现历史已经写回（任务结束），就直接追加。
+     *
+     * 每趟任务开始时清空，避免上一趟的残留混进来。
+     */
+    val pendingMemoryTurns = mutableListOf<ChatTurn>()
+
+    /**
+     * 这一趟的历史有没有写回 [modelHistoryState]。
+     *
+     * 归纳完成时靠它决定走哪条路：还没写回 → 留在 [pendingMemoryTurns]
+     * 等着一起赋值；已经写回 → 当场追加。
+     *
+     * 不能拿 `isRunning` 代替：那个标志在任务协程的 finally 里才复位，
+     * 而归纳的 onDone 时刻不确定，两者没有稳定的先后关系。
+     */
+    @Volatile
+    var memoryHistoryFlushed: Boolean = false
     val modelFingerprintsState = mutableStateOf<List<Int>>(emptyList())
     val contextMemoryState = mutableStateOf("")
     val contextSkillCatalogState = mutableStateOf("")
