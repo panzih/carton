@@ -23,12 +23,19 @@ plugins {
  * 升级 Robolectric 时，这里的版本要和它内部 `SdkCollection` 对 34 的默认映射
  * 一起改；改错了表现是"找不到 android-all"而不是下载失败。
  */
-val robolectricAndroidAllVersion = "14-robolectric-10818077-i7"
+val robolectricAndroidAllVersions = listOf(
+    // 显式 @Config(sdk = [34]) 的用例用这个
+    "14-robolectric-10818077-i7",
+    // 没写 @Config 的用例按 targetSdk（35）跑，用的是这个
+    "15-robolectric-12650502-i7",
+)
 
 val robolectricDeps: Configuration by configurations.creating
 
 dependencies {
-    robolectricDeps("org.robolectric:android-all-instrumented:$robolectricAndroidAllVersion")
+    robolectricAndroidAllVersions.forEach {
+        robolectricDeps("org.robolectric:android-all-instrumented:$it")
+    }
 }
 
 val robolectricDepsDir = layout.buildDirectory.dir("robolectric-deps")
