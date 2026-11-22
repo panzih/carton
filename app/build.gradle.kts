@@ -1,9 +1,51 @@
 import java.util.Properties
+import org.gradle.api.tasks.testing.Test
 
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+}
+
+/**
+ * Robolectric 的 android-all 运行时包。
+ *
+ * ## 为什么要自己下载
+ *
+ * Robolectric 在**测试运行时**才去拉这个包，而且是用它自己的
+ * `MavenArtifactFetcher` 直连 Maven Central —— **绕开了 Gradle 的镜像配置**。
+ * 实测在 GitHub Actions 上会间歇性失败（`IOException`，一次红 255 个用例），
+ * 重跑也未必能好，而且失败信息看起来像代码错，实际是下载失败。
+ *
+ * 这里先用 Gradle 把它下载下来（走 `settings.gradle.kts` 里配的镜像），
+ * 再让 Robolectric 以 offline 模式从这个目录取 —— 测试阶段完全不联网。
+ *
+ * 升级 Robolectric 时，这里的版本要和它内部 `SdkCollection` 对 34 的默认映射
+ * 一起改；改错了表现是"找不到 android-all"而不是下载失败。
+ */
+val robolectricAndroidAllVersion = "14-robolectric-10818077-i7"
+
+val robolectricDeps: Configuration by configurations.creating
+
+dependencies {
+    robolectricDeps("org.robolectric:android-all-instrumented:$robolectricAndroidAllVersion")
+}
+
+val robolectricDepsDir = layout.buildDirectory.dir("robolectric-deps")
+
+val copyRobolectricDeps by tasks.registering(Copy::class) {
+    description = "把 Robolectric 的 android-all 复制到固定目录，供 offline 模式读取"
+    from(robolectricDeps)
+    into(robolectricDepsDir)
+}
+
+tasks.withType<Test>().configureEach {
+    dependsOn(copyRobolectricDeps)
+    systemProperty("robolectric.offline", "true")
+    systemProperty(
+        "robolectric.dependency.dir",
+        robolectricDepsDir.get().asFile.absolutePath,
+    )
 }
 
 /**

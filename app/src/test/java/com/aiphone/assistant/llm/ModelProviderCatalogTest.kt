@@ -6,8 +6,13 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 
+// sdk 必须写死：CI 里 Robolectric 以 offline 模式从固定目录取 android-all
+// （见 app/build.gradle.kts 的 robolectricDeps）。不写就按 targetSdk 35 找，
+// 那个制品不在离线目录里，会报成"找不到 android-all"。
 @RunWith(RobolectricTestRunner::class)
+@Config(sdk = [34])
 class ModelProviderCatalogTest {
 
     private val json = """

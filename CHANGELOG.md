@@ -38,6 +38,15 @@
   标题正文齐全、无正文时不留多余空行。
 - 上一版 `DistillParseTest` 7 例继续通过。
 
+### CI
+
+- Robolectric 改为 **offline 模式**：android-all 由 Gradle 预先下载到
+  `build/robolectric-deps/`，测试阶段不再联网。它原先用自己的
+  `MavenArtifactFetcher` 直连 Maven Central（绕开 Gradle 镜像），
+  在 Actions 上间歇失败，一次红 255 个用例，且报错看着像代码问题。
+- `ModelProviderCatalogTest` 补 `@Config(sdk = [34])` —— 不写会按
+  targetSdk 35 找 android-all，而离线目录里只有 34 的制品。
+
 ### 未变
 
 - 系统提示词（`AgentPrompt.VERSION` 仍为 12）、动作协议、模型通道、
