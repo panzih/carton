@@ -177,7 +177,7 @@ jobs:
           # 「AI手机-v0.12.5.apk」变成了「AI.-v0.12.5.apk」）。
           # gh 的 `path#name` 写法在不同版本上也不都会改名，所以先复制成
           # 目标文件名再上传，附件名才稳定。
-          STAGE="${RUNNER_TEMP}/AI-phone-${TAG}-official.apk"
+          STAGE="${RUNNER_TEMP}/carton-${TAG}-official.apk"
           cp "$APK" "$STAGE"
 
           # 只有一个包，但签名线换过，旧用户不能覆盖安装的事实要写在最前面

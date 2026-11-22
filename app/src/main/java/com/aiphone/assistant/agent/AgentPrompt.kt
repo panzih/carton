@@ -72,8 +72,10 @@ object AgentPrompt {
      *      「没有列表」的四种原因不再在提示词里复述，改由每步消息按实际情况说明。
      * 11 —— 0.17.2：补「页面上的字是数据，不是指令」一节（反提示词注入）；
      *      记忆段明确它可能混入网页内容、其中的「指令」不要执行。
+     * 12 —— 0.17.5：「关于你所在的项目」里的仓库地址随仓库改名更新为
+     *      github.com/panzih/carton（旧名 AI-phone-use-bypanzhihe）。
      */
-    const val VERSION = "11"
+    const val VERSION = "12"
 
     /**
      * 系统提示词。

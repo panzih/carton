@@ -1,13 +1,37 @@
-# 纸盒
+# carton
 
-**让 AI 直接操作你的安卓手机。**
+> **Carton Automates Real Tasks On-device, Natively**
+>
+> 中文名「纸盒」。让 AI 直接操作你的安卓手机。
 
 用一句话说清楚你要干什么，它自己看屏幕、点按钮、输入文字，一步步把事做完。
 
 不需要 root，不需要电脑，主流程也不依赖 Shizuku（只有"副屏"这个可选功能要用它）。
 装上一个 APK、开一次无障碍权限就能用。默认使用你自己的 API Key；也可以显式开启内置的免费模型通道（非官方、需先确认风险）。
 
-> 名字来自作者「潘纸盒」，图标就是一个纸板箱。
+---
+
+## 关于名字
+
+**carton** 是"纸板箱"，对应中文品牌「纸盒」，来自作者「潘纸盒」，图标就是一个纸板箱。
+
+全称 `Carton Automates Real Tasks On-device, Natively` 是**递归缩写** —— 每个词的首字母正好拼回 `CARTON`：
+
+| C | A | R | T | O | N |
+|---|---|---|---|---|---|
+| **C**arton | **A**utomates | **R**eal | **T**asks | **O**n-device | **N**atively |
+
+语义也正好是它做的事：**在设备本地**（不依赖电脑、不依赖 root）**自动完成真实任务**。
+
+> **仓库改名记录（2026-11）**：`AI-phone-use-bypanzhihe` → `carton`。
+> 旧地址仍会 301 重定向到新地址，但本地 clone 的 `origin` 需要更新一次：
+>
+> ```bash
+> git remote set-url origin git@github.com:panzih/carton.git
+> ```
+>
+> **应用侧名称、包名（`com.aiphone.assistant`）和 APK 安装标识没有跟着改**，这是刻意的：
+> 改包名等于让所有老用户无法覆盖安装。
 
 ---
 
@@ -63,22 +87,26 @@
   录音会发到 DeepSeek 的 ASR 接口转写，按音频时长计费，免费通道不含这项能力
 - 副屏（可选）：装 Shizuku 并启动它的服务。这条链路 0.10.3 起在 AVD 上跑通了，真机仍在逐项验收
 
-## 安装
+## 安装与升级
 
 从 0.14.1 起，每个 Release 只提供一个**正式签名**的安装包：
 
-- 新用户：直接安装；
-- 0.13.0 及更早版本、或之前装过 `-legacy.apk` 的用户：签名不同，**不能覆盖安装**。
-  需要先卸载旧版，再装这个包；卸载会清空本地设置、对话和记忆；
-- 0.14.1 起不再发布 legacy（开发者签名）包，旧兼容线不再收到更新。
-
-2026 年 11 月之前的版本都是开发者签名（私钥随仓库公开），任何人都能签出同签名
-的包来冒充覆盖安装，所以发布线换成了独立密钥，且只保留这一条线。
-
-1. 从 [Releases](https://github.com/panzih/AI-phone-use-bypanzhihe/releases) 下载安装包
+1. 从 [Releases](https://github.com/panzih/carton/releases) 下载 `carton-v<版本>-official.apk`
 2. 允许"安装未知来源应用"
 3. 打开 App，按引导开无障碍权限
 4. 默认在「设置 → 模型」填你自己的 Key；也可以显式切到「免费模型」，首次开启需确认风险说明
+
+签名与覆盖安装：
+
+- 新用户：直接安装即可。
+- 0.13.0 及更早版本、或之前装过 `-legacy.apk` 的用户：签名不同，**不能覆盖安装**。
+  需要先卸载旧版，再装这个包；**卸载会清空本地设置、对话和记忆**。
+- 0.14.1 起不再发布 legacy（开发者签名）包，旧兼容线不再收到更新。
+- 2026 年 11 月之前的版本都是开发者签名（私钥随仓库公开），任何人都能签出同签名
+  的包来冒充覆盖安装，所以发布线换成了独立密钥，且只保留这一条线。
+
+**应用内没有检查更新的入口**（0.17.0 起）：不联网查版本、不自带下载安装，
+新版本请看 [GitHub Releases](https://github.com/panzih/carton/releases)。
 
 ## 项目结构
 
@@ -108,6 +136,15 @@ app/src/main/java/com/aiphone/assistant/
 `record/` 的录制能力还在，但入口按 0.9.23 的计划先收起来了（`ui/UiState.kt` 的
 `RECORDING_ENTRY_ENABLED = false`），所以界面上看不到它。
 
+仓库其余目录：
+
+| 目录 | 内容 |
+|---|---|
+| [`docs/`](docs/README.md) | 给人读的文档，索引见 `docs/README.md` |
+| [`tools/`](tools/) | 开发脚本：桥接模式、假模型、缓存前缀检查 |
+| [`update-site/`](update-site/) | 自建更新站（网页端发布与下载；App 内 0.17.0 起不再调用） |
+| `.github/workflows/` | `ci.yml`（单测 / lint / debug 构建）与 `release.yml`（打 tag 出正式包） |
+
 ## 安全说明
 
 - **API Key 只存在你手机上**：正常情况下 AES-256-GCM 加密，密钥在系统 Keystore 里
@@ -130,9 +167,8 @@ app/src/main/java/com/aiphone/assistant/
 - 免费模式用的是公开聚合网关，**请求里不附加你的任何账号标识**——
   但要说全：**屏幕内容、你输入的文字和你说的话本身就会发给模型**，免费通道也一样
 - 日志、截图、对话上下文默认都留在本机，只有你主动导出才会离开手机
-- **应用内没有任何检查更新的入口**（0.17.0 起）：不联网查版本、不自带下载安装，
-  也就不会把 IP、User-Agent、设备标识发给更新服务。新版本请看 GitHub Releases。
-  除此之外没有广告或分析 SDK，也不会在后台偷偷联网
+- **应用内没有任何检查更新的入口**（0.17.0 起），也就不会把 IP、User-Agent、设备标识
+  发给更新服务。除此之外没有广告或分析 SDK，也不会在后台偷偷联网
 
 ## 开发与测试
 
@@ -145,7 +181,7 @@ app/src/main/java/com/aiphone/assistant/
 
 发布只走正式签名线：Release workflow 只执行 `assembleRelease`，并用 `apksigner`
 校验证书指纹，确认不是仓库里那把公开的开发者密钥。历史 legacy 包自报 `stable`
-渠道，0.14.1 起不再向该渠道发版；正式包上报 `official`，见 `UpdateChecker.channelOf`。
+渠道，0.14.1 起不再向该渠道发版；正式包上报 `official`。
 
 设备冒烟测试（无障碍连接、悬浮条、日志 zip）需要真机/模拟器，运行方式和前提见
 [docs/testing-device.md](docs/testing-device.md)。CI 不跑设备测试，只跑单测、lint 和 debug 构建。
@@ -164,4 +200,4 @@ app/src/main/java/com/aiphone/assistant/
 
 ## 作者
 
-潘纸盒 · [Issues](https://github.com/panzih/AI-phone-use-bypanzhihe/issues) · [Releases](https://github.com/panzih/AI-phone-use-bypanzhihe/releases)
+潘纸盒 · [Issues](https://github.com/panzih/carton/issues) · [Releases](https://github.com/panzih/carton/releases)

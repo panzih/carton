@@ -1,5 +1,37 @@
 # 更新日志
 
+## 0.17.5
+
+> **仓库改名 `carton`，README 重写。** 功能逻辑不变，改的是项目身份与文档。
+
+### 项目改名
+
+- GitHub 仓库 `AI-phone-use-bypanzhihe` → **`carton`**，旧地址 301 重定向。
+  本地 clone 需要 `git remote set-url origin git@github.com:panzih/carton.git`。
+- 名字来源：`carton` = 纸板箱，对应中文品牌「纸盒」；全称
+  `Carton Automates Real Tasks On-device, Natively` 是递归缩写，首字母拼回 `CARTON`。
+- **应用侧不改名**：`app_name` 仍是「纸盒」，包名仍是 `com.aiphone.assistant`。
+  改包名会让所有老用户无法覆盖安装，代价远大于收益。
+- Release 附件的 APK 文件名前缀 `AI-phone-` → `carton-`。
+
+### 代码内引用
+
+- `AppInfo.REPO_URL` → `https://github.com/panzih/carton`。这个常量会进系统提示词
+  （「关于你所在的项目」段），所以提示词字节变了：`AgentPrompt.VERSION` 11 → 12，
+  老上下文按设计重开一次；`PromptFreezeTest` 的冻结哈希同步更新。
+- README 里过时的 `UpdateChecker.channelOf` 引用已删（该入口 0.17.0 已移除）。
+
+### 文档
+
+- `README.md` 重写：补充「关于名字」一节（递归缩写对照表 + 改名记录）、
+  仓库目录索引；安装章节按当前实际产物名改写；明确改名不改包名的原因。
+
+### 未变
+
+- 动作协议、模型通道、免费车道、权限页、定时任务、副屏、录制均未改动；
+  可直接覆盖安装。
+- 版本号 0.17.5 / versionCode 95。
+
 ## 0.17.4
 
 > **「正在总结记忆」改成对话里的一条普通消息。**
