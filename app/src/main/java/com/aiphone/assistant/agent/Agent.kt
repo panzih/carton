@@ -83,6 +83,9 @@ class Agent(
 
     suspend fun review(instruction: String = ""): LlmResult = session.review(instruction)
 
+    /** 「接下来你可能想做什么」—— 复用本趟的 system + history，增量只多一条提问 */
+    suspend fun suggestNext(): LlmResult = session.suggestNext()
+
     fun openMirrorPage() = session.openMirrorPage()
 
     companion object {

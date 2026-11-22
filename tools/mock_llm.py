@@ -301,20 +301,27 @@ class Handler(BaseHTTPRequestHandler):
         # 它不参与主对话前缀比较，也不该消耗主剧本索引 —— 否则每做一次
         # 归纳，下一次端到端测试的主剧本就会错位一格。
         is_distill = "记忆整理助手" in system_text
-        # 「下一步建议」也是任务结束后的独立调用（system 是「下一步建议助手」）
-        is_suggest = "下一步建议助手" in system_text
+        # 「下一步建议」复用主对话的 system，靠最后那条 user 提问认出来。
+        # 注意它**要参与前缀比较** —— 这正是要验证的：前缀应该 100% 命中。
+        user_texts = [
+            m.get("content") for m in messages
+            if isinstance(m, dict) and m.get("role") == "user" and isinstance(m.get("content"), str)
+        ]
+        is_suggest = any("接下来最可能想让你做的三件事" in t for t in user_texts)
 
         prefix = 0
         prev_len = len(state["last_texts"]) if state["last_texts"] else 0
-        if not is_review and not is_distill and not is_suggest:
+        if not is_review and not is_distill:
             if state["last_texts"] is not None:
                 for a, b in zip(state["last_texts"], texts):
                     if a == b:
                         prefix += 1
                     else:
                         break
-            # 上一次的整条序列如果原样成为这次的前缀，就是 100% 命中
-            state["last_texts"] = texts
+            # 建议请求**参与比较但不成为新基线**：它复用主对话前缀，
+            # 应该报 100% 命中；但它多出来的那条提问不该影响下一次任务的判据。
+            if not is_suggest:
+                state["last_texts"] = texts
 
         tag = ("（点击前复核）" if is_review else "（记忆归纳）" if is_distill
                else "（下一步建议）" if is_suggest else "")
@@ -334,12 +341,12 @@ class Handler(BaseHTTPRequestHandler):
                     for line in body.splitlines()[:12]:
                         print(f"    | {line[:100]}")
         elif is_suggest:
-            print("  建议请求  : 独立上下文（不参与主对话前缀）")
-            for m in messages:
-                if m.get("role") == "user":
-                    body = m.get("content")
-                    body = body if isinstance(body, str) else ""
-                    print(f"  建议输入  : {len(body)} 字符")
+            # 复用主上下文：这里必须看到前缀完整保留，否则说明建议又把
+            # 整段历史按未命中重算了。
+            print(f"  前缀复用  : {prefix} / {prev_len} 条" +
+                  ("   ✅ 前缀完整保留" if prev_len and prefix == prev_len else
+                   "   ⚠️ 前缀被打断" if prev_len else ""))
+            print("  建议请求  : 复用主对话上下文，末尾只追加一条提问")
         else:
             print(f"  前缀复用  : {prefix} / {prev_len} 条" +
                   ("   ✅ 前缀完整保留" if prev_len and prefix == prev_len else

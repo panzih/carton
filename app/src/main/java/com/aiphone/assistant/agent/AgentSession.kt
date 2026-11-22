@@ -683,6 +683,28 @@ internal class AgentSession(
     }
 
     /**
+     * 「接下来你可能想做什么」。
+     *
+     * 和 [review] 一样**复用系统提示词 + 全部历史**，只在末尾追加一条提问 ——
+     * 前面几十轮全是缓存命中，成本只多这一条。新开一套独立上下文看着干净，
+     * 实际等于把整段历史按未命中价重算一遍。
+     *
+     * 返回值里可能是一堆建议行，也可能是「无」—— 解析交给调用方。
+     */
+    suspend fun suggestNext(): LlmResult {
+        if (allHistory.isEmpty()) return LlmResult.Fail("还没有可参考的任务")
+        return withContext(Dispatchers.IO) {
+            llm.chat(
+                system = systemPrompt.ifBlank {
+                    AgentPrompt.system(modelName = settings.modelName)
+                },
+                history = allHistory + ChatTurn(ChatTurn.USER, AgentPrompt.SUGGEST_INSTRUCTION),
+                shouldAbort = { isStopped() },
+            )
+        }
+    }
+
+    /**
      * 点击前复核：截当前屏 → 裁落点附近 → 画十字 → 问模型"这一下点对了吗"。
      *
      * 返回 null = 复核没做成（截图失败/模型不接受图片/请求失败），调用方

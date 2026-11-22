@@ -1075,36 +1075,6 @@ private fun AppRoot(
                     // 总结完成后同一条就地更新，不会再冒一条新消息。
                     var memoryLogId: String? = null
 
-                    // 任务结束后问模型「接下来你可能想做什么」。
-                    //
-                    // 它要读的轮次在这里就定下来：`memorizeAfterTask` 之后
-                    // conversation 里会多出记忆那条，「刚做完什么」反而被稀释了。
-                    val suggestTurns = conversation.snapshot().drop(taskTurnStart.coerceAtLeast(0))
-
-                    fun suggestNext() {
-                        if (suggestTurns.isEmpty()) {
-                            suggestions = emptyList()
-                            return
-                        }
-                        scope.launch {
-                            // LlmClient.chat 是同步阻塞的，必须走 IO。
-                            // 失败一律当"没有建议"，不弹错、不写日志 ——
-                            // 这只是锦上添花，不该因为一次网络抖动打扰用户。
-                            val got = withContext(Dispatchers.IO) {
-                                runCatching {
-                                    SuggestionProvider(llm).suggest(
-                                        turns = suggestTurns,
-                                        recentMemory = MemoryStore.readForPrompt(
-                                            context.applicationContext
-                                        ),
-                                    )
-                                }.getOrDefault(emptyList())
-                            }
-                            // 任务已经重新开跑就别再贴旧建议了
-                            if (!isRunning) suggestions = got
-                        }
-                    }
-
                     memorizeAfterTask(
                         scope = scope,
                         context = context.applicationContext,
@@ -1165,13 +1135,7 @@ private fun AppRoot(
                                 // 对话里也留一条，下次归纳知道"这条已经记过了"
                                 conversation.add(Turn(Turn.Role.AI, "（记忆）${outcome.title}"))
                             }
-
-                            // 记忆处理完再问"接下来可能想做什么"。
-                            //
-                            // 放在记忆之后而不是之前：建议可以利用刚写进去的
-                            // 那条记忆，比只看过程更贴用户。它同样是一次独立调用，
-                            // 失败就是空列表，不影响任何别的路径。
-                            suggestNext()
+                            refreshStats()
                         },
                     )
                 }
@@ -1215,6 +1179,21 @@ private fun AppRoot(
         modelHistory = finalHistory + memoryTurns
         host.memoryHistoryFlushed = true
         modelFingerprints = llm.fingerprintChain()
+
+        // 任务结束后问「接下来你可能想做什么」。
+        //
+        // **复用这一趟的 system + 全部历史**（`agent.suggestNext()`）：只在末尾
+        // 追加一条提问，前面几十轮全是缓存命中，增量只多这一条的钱。
+        // 早先这里自己起了套独立上下文（自己的 system、自己的提问），看着干净，
+        // 实际等于把整段历史按**未命中**价重算一遍 —— 那是笔冤枉钱。
+        //
+        // 失败一律当"没有建议"：不弹错、不写日志，这只是锦上添花。
+        scope.launch {
+            val r = runCatching { agent.suggestNext() }.getOrNull()
+            val got = (r as? LlmResult.Ok)?.text?.let { SuggestionProvider.parse(it) }.orEmpty()
+            // 期间又开了新任务就别再贴旧建议（submit 里已经清空过）
+            if (!isRunning) suggestions = got
+        }
         // 上下文已保存是内部状态，不再作为一条日志显示给用户
     }
 
