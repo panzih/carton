@@ -993,6 +993,33 @@ private fun AppRoot(
                         text,
                         label,
                     )
+                    // 同一条事件也进记忆语境（turn）。
+                    //
+                    // **`logs` 是给眼睛看的，`Turn` 是给归纳器看的** —— 只记 logs
+                    // 的话，任务结束时归纳器手里只有「任务 + 结论」两句话，
+                    // 它要提炼的「常用应用 / 这台机器的坑 / 用户偏好」全在过程里，
+                    // 一条都看不到，只能编，或者被兜底逻辑把任务原文抄进记忆。
+                    //
+                    // 两类不收：
+                    //   RESULT  —— 只有「完成」和副屏提示；完成结论 onFinished
+                    //              本来就会单独记一条，收了就是两份。
+                    //   过程播报 —— 「正在请求模型 …」每步一条、零信息量，
+                    //              二十几步下来纯属灌水。
+                    val noise = text.startsWith("正在请求模型")
+                    if (kind != Agent.EventKind.RESULT && !noise) {
+                        conversation.add(
+                            Turn(
+                                when (kind) {
+                                    Agent.EventKind.ACTION -> Turn.Role.ACTION
+                                    Agent.EventKind.ERROR -> Turn.Role.ACTION
+                                    else -> Turn.Role.AI
+                                },
+                                // 带上 label（「第 3 步 · 动作」「做不了」…）：
+                                // 归纳器靠它看出"这一步为什么停"。
+                                text = if (label.isNullOrBlank()) text else "「$label」$text",
+                            )
+                        )
+                    }
                 }
 
                 override fun onProgress(step: Int, maxSteps: Int) {

@@ -106,6 +106,24 @@ object ContextStore {
     private const val MAX_ENTRIES = 300
 
     /**
+     * 记忆语境（turns）单独的上限。
+     *
+     * 0.17.5 起主循环的思考/动作/错误也进 turns（否则归纳器只看得到
+     * 「任务 + 结论」两句话，学不到东西）。一次任务几十条很正常，
+     * 用 [MAX_ENTRIES] 那种 300 条的量级会把文件撑大，而且归纳时
+     * 只取末尾 6000 字符，留太多也没用。
+     */
+    private const val MAX_TURNS = 120
+
+    /**
+     * 单条 turn 的字符上限。
+     *
+     * 动作预览、界面摘要这类文本可能上千字；不截断的话十几条就能把
+     * 归纳窗口（[memory.MAX_INPUT_CHARS]）吃光，真正的过程反而被挤掉。
+     */
+    private const val MAX_TURN_CHARS = 300
+
+    /**
      * 模型历史最多留多少个字符。
      *
      * 这些字符每次请求都要重发 —— 但**命中缓存的部分只按 $0.003/百万**
@@ -304,11 +322,18 @@ object ContextStore {
                     }
                 })
                 put("turns", JSONArray().apply {
-                    turns.takeLast(MAX_ENTRIES).forEach { t ->
+                    turns.takeLast(MAX_TURNS).forEach { t ->
                         put(
                             JSONObject().apply {
                                 put("role", t.role.name)
-                                put("text", t.text)
+                                put(
+                                    "text",
+                                    if (t.text.length > MAX_TURN_CHARS) {
+                                        t.text.take(MAX_TURN_CHARS) + "…"
+                                    } else {
+                                        t.text
+                                    },
+                                )
                                 put("at", t.at)
                             }
                         )
